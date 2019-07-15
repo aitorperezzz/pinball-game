@@ -2,6 +2,7 @@
 pinball_v3/bin/
 pinball_v3/obj/
 pinball_v3/Properties/
+.vs/
 
 #Ficheros a ignorar por git.
 pinball_v3.sln
