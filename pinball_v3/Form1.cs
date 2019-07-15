@@ -64,7 +64,7 @@ namespace pinball_v3
             /* Funciones de callback para eventos. */
             Paint += new PaintEventHandler(Form1_Paint);
             KeyDown += new KeyEventHandler(Form1_KeyDown);
-            KeyUp += new KeyEventHandler(Form1_KeyUp);
+            //KeyUp += new KeyEventHandler(Form1_KeyUp);
 
             KeyPreview = true;
             DoubleBuffered = true;
@@ -114,9 +114,10 @@ namespace pinball_v3
             /* Gestionamos la colisión de la pelota con cada flipper. */
             for (int i = 0; i < this.flippers.Count; i++)
             {
-                if (this.flippers[i].HandleCollision(this.ball, newBall, this.friction))
+                if (this.flippers[i].HandleCollision(this.ball, newBall))
                 {
                     Console.WriteLine("Colisión con flipper");
+                    this.ball = newBall.Copy();
                     Invalidate();
                     return;
                 }
@@ -144,6 +145,7 @@ namespace pinball_v3
             /* Dibujar los flippers. */
             for (int i = 0; i < this.flippers.Count; i++)
             {
+                this.flippers[i].UpdateFlipperAngle();
                 this.flippers[i].Draw(e.Graphics, this.canvasHeight);
             }
 
@@ -160,21 +162,21 @@ namespace pinball_v3
         }
 
         /* Función de callback para cuando se deja de pulsar una tecla. */
-        private void Form1_KeyUp(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Left)
-            {
-                /* Indicar al flipper de la izquierda que la tecla
-                 * se ha dejado de pulsar. */
-                this.flippers[0].KeyReleased();
-            }
-            else if (e.KeyCode == Keys.Right)
-            {
-                /* Indicar al flipper de la derecha que la tecla
-                 * se ha dejado de pulsar. */
-                this.flippers[1].KeyReleased();
-            }
-        }
+        //private void Form1_KeyUp(object sender, KeyEventArgs e)
+        //{
+        //    if (e.KeyCode == Keys.Left)
+        //    {
+        //        /* Indicar al flipper de la izquierda que la tecla
+        //         * se ha dejado de pulsar. */
+        //        this.flippers[0].KeyReleased();
+        //    }
+        //    else if (e.KeyCode == Keys.Right)
+        //    {
+        //        /* Indicar al flipper de la derecha que la tecla
+        //         * se ha dejado de pulsar. */
+        //        this.flippers[1].KeyReleased();
+        //    }
+        //}
 
         /* Función de callback para cuando se presiona una tecla. */
         private void Form1_KeyDown(object sender, KeyEventArgs e)

@@ -15,8 +15,8 @@ namespace pinball_v3
         private Polygon polygon;
         private readonly double rad;
 
-        private readonly double minVelocity = 1;
-        private readonly double maxVelocity = 50;
+        private readonly double minVelocity = 10;
+        private readonly double maxVelocity = 400;
 
         /* Función constructora de la pelota. */
         public Ball(Vector position, Vector velocity, double rad)
@@ -118,12 +118,12 @@ namespace pinball_v3
          * para sacarla hacia afuera. */
         private void CheckSATAxisDirection(MinimumTranslationVector mtv, Polygon polygon)
         {
-            /* Calculo un vector desde el centroide del polígono
-             * hasta el centro de la pelota. */
-            Vector outDirection = Vector.Subtract(this.position, polygon.Centroid);
-            outDirection.Normalize();
+            /* Calculo un vector desde el centroide de la pelota hasta el centroide
+             * del polígono. */
+            Vector ballDirection = Vector.Subtract(polygon.Centroid, this.position);
+            ballDirection.Normalize();
 
-            if (Vector.DotProduct(mtv.axis, outDirection) > 0)
+            if (Vector.DotProduct(mtv.axis, ballDirection) > 0)
             {
                 /* Ambos vectores van en la misma dirección, así que
                  * hay que cambiar el eje de mtv de sentido. */
@@ -139,7 +139,7 @@ namespace pinball_v3
             Vector displacement = mtv.axis.NewWithLength(mtv.overlap);
 
             /* Le sumo este vector a la posición de la pelota. */
-            this.position = Vector.Sum(this.position, displacement);
+            this.Position = Vector.Sum(this.position, displacement);
         }
 
         /* Comprueba que la velocidad de la pelota no es ni muy baja ni muy alta. */

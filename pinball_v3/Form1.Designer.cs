@@ -37,7 +37,7 @@
             this.ClientSize = new System.Drawing.Size(500, 600);
             this.Name = "Form1";
             this.Text = "Pinball_v3";
-            this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyUp);
+            //this.KeyUp += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyUp);
             this.ResumeLayout(false);
         }
 
