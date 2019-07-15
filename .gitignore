@@ -1,0 +1,12 @@
+# Carpetas a ignorar por git
+pinball_v3/bin/
+pinball_v3/obj/
+pinball_v3/Properties/
+
+#Ficheros a ignorar por git.
+pinball_v3.sln
+pinball_v3/AnimationTimer.cs
+pinball_v3/App.config
+pinball_v3/Form1.resx
+pinball_v3/Stopwatch.cs
+pinball_v3/pinball_v3.csproj
