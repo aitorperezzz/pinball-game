@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Timers;
+using System.Drawing;
 
 namespace pinball_v3
 {
@@ -50,6 +51,9 @@ namespace pinball_v3
         private readonly int bumperRad = 20;
         private List<Bumper> bumpers;
 
+        /* Paredes. */
+        private List<Polygon> walls;
+
         /* Función constructora de la form. */
         public Form1()
         {
@@ -95,6 +99,31 @@ namespace pinball_v3
             Vector ballPosition = new Vector(this.canvasWidth / 2, this.canvasHeight - 100);
             Vector ballVelocity = new Vector(rand.Next(1, 250), rand.Next(1, 250));
             this.ball = new Ball(ballPosition, ballVelocity, this.radius);
+
+            /* Creamos las paredes de abajo. */
+            this.walls = new List<Polygon>(2);
+            double cuty, cutx;
+            /* Pared de la izquierda. */
+            Vector flipper0direction = new Vector(Math.Cos(-Math.PI / 5), Math.Sin(-Math.PI / 5));
+            StraightLine baseWall0 = new StraightLine(flipper0position, flipper0direction);
+            cuty = baseWall0.GetYAt(0);
+            cutx = baseWall0.GetXAt(0);
+            List<Vector> verticesWall0 = new List<Vector>(3);
+            verticesWall0.Add(new Vector(0, cuty));
+            verticesWall0.Add(new Vector(cutx, 0));
+            verticesWall0.Add(new Vector(0, 0));
+            /* Pared de la derecha. */
+            Vector flipper1direction = new Vector(Math.Cos(Math.PI + Math.PI / 5), Math.Sin(Math.PI + Math.PI / 5));
+            StraightLine baseWall1 = new StraightLine(flipper1position, flipper1direction);
+            cuty = baseWall1.GetYAt(canvasWidth);
+            cutx = baseWall1.GetXAt(0);
+            List<Vector> verticesWall1 = new List<Vector>(3);
+            verticesWall1.Add(new Vector(cutx, 0));
+            verticesWall1.Add(new Vector(canvasWidth, cuty));
+            verticesWall1.Add(new Vector(canvasWidth, 0));
+
+            this.walls.Add(new Polygon(verticesWall0));
+            this.walls.Add(new Polygon(verticesWall1));
         }
 
         /* Función de callback para cada click del timer. */
@@ -115,6 +144,17 @@ namespace pinball_v3
                 Console.WriteLine(DateTime.UtcNow + ": Colisión con los bordes del canvas");
                 Invalidate();
                 return;
+            }
+
+            /* Comprobar colisión con las paredes. */
+            for (int i = 0; i < this.walls.Count; i++)
+            {
+                if (this.walls[i].HandleCollisionSAT(ball))
+                {
+                    Console.WriteLine(DateTime.UtcNow + ": Colisión con una pared");
+                    Invalidate();
+                    return;
+                }
             }
 
             /* Comprobamos una primera colisión "naive" con los flippers. */
@@ -173,6 +213,12 @@ namespace pinball_v3
                 this.bumpers[k].Draw(e.Graphics, this.canvasHeight);
             }
 
+            /* Dibujar paredes. */
+            for (int k = 0; k < this.walls.Count; k++)
+            {
+                this.walls[k].Draw(new Pen(Color.Black), e.Graphics, this.canvasHeight);
+            }
+
             Invalidate();
         }
 
@@ -212,7 +258,7 @@ namespace pinball_v3
 
 
 
-
+        /* DEPRECATED */
 
         /* La parte gráfica está basada en objetos de tipo polígono. */
         //List<Polygon> polygons = new List<Polygon>();

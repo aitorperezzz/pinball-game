@@ -20,9 +20,10 @@ namespace pinball_v3
         private Vector lastPosition;
         private DateTime lastFrame;
 
-        /* Fijo velocidades límite. */
+        /* Fijo velocidades límite y gravedad. */
         private readonly double minVelocity = 10; /* px / segundo */
         private readonly double maxVelocity = 400; /* px / segundo */
+        private readonly double gravity = 9.8;
 
         /* Función constructora de la pelota. */
         public Ball(Vector position, Vector velocity, double rad)
@@ -86,12 +87,22 @@ namespace pinball_v3
 
             /* Calculamos el número de segundos que han pasado
              * desde el último frame. */
-            double elapsed = DateTime.UtcNow.Subtract(this.lastFrame).TotalSeconds;
+            double elapsed = DateTime.UtcNow.Subtract(this.lastFrame).TotalMilliseconds; /* milisegundos */
 
             /* Calculamos el número de pixeles que se tiene que mover la 
              * pelota en este frame. */
-            Vector pixelsPerFrame = this.Velocity.NewTimes(elapsed);
+            Vector pixelsPerFrame = this.Velocity.NewTimes(elapsed / 1000);
             this.position.Sum(pixelsPerFrame);
+
+            /* Aplicamos los efectos de fricción. */
+            if (Math.Abs(this.Velocity.X) > this.minVelocity)
+            {
+                this.Velocity.X *= Math.Pow(0.4, elapsed / 1000);
+            }
+
+            /* Aplicamos los efectos de la gravedad. */
+            double gravityIncrease = 400 * this.gravity * (elapsed / 1000) * 0.1;
+            this.Velocity.Y -= gravityIncrease * 1;
 
             /* Actualizamos el instante del último frame, que es ahora. */
             this.lastFrame = DateTime.UtcNow;

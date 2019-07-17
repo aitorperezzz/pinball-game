@@ -7,49 +7,56 @@
         private Vector position;
         private Vector direction;
 
+        private double m;
+        private double b;
+
         public StraightLine(Vector position, Vector direction)
         {
+            /* Guardo. */
             this.position = position.Copy();
             this.direction = direction.Copy();
+
+            /* Calculo pendiente y ordenada en el origen. */
+            Vector secondPoint = Vector.Sum(this.position, this.direction);
+            if (this.position.X != secondPoint.X)
+            {
+                this.m = (this.position.Y - secondPoint.Y) / (this.position.X - secondPoint.X);
+            }
+            else
+            {
+                /* La pendiente de una recta vertical es infinita. */
+                this.m = double.PositiveInfinity;
+            }
+            this.b = this.position.Y - this.m * this.position.X;
+        }
+
+        /* Devuelve la y correspondiente a la x que se le pasa. */
+        public double GetYAt(double x)
+        {
+            return this.m * x + this.b;
+        }
+
+        /* Devuelve la x correspondiente a la y que se le pasa. */
+        public double GetXAt(double y)
+        {
+            if (this.m == 0)
+            {
+                /* En una recta horizontal, esta x no está definida. */
+                return double.NaN;
+            }
+
+            return (y - this.b) / this.m;
         }
 
         /* Función estática que devuelve el punto de intersección de
          * dos rectas que se le pasan. */
         public static Vector CalculateIntersection(StraightLine line1, StraightLine line2)
         {
-            /* Calculamos las pendientes de las dos rectas. */
-            Vector secondPoint1 = Vector.Sum(line1.position, line1.direction);
-            Vector secondPoint2 = Vector.Sum(line2.position, line2.direction);
-            double m1;
-            if (line1.position.X != secondPoint1.X)
-            {
-                m1 = (line1.position.Y - secondPoint1.Y) / (line1.position.X - secondPoint1.X);
-            }
-            else
-            {
-                /* La pendiente de una recta vertical es infinita. */
-                m1 = double.PositiveInfinity;
-            }
-            double m2;
-            if (line2.position.X != secondPoint2.X)
-            {
-                m2 = (line2.position.Y - secondPoint2.Y) / (line2.position.X - secondPoint2.X);
-            }
-            else
-            {
-                /* La pendiente de una recta vertical es infinita. */
-                m2 = double.PositiveInfinity;
-            }
-
-            /* Calculo las ordenadas en el origen de ambas rectas. */
-            double b1 = line1.position.Y - m1 * line1.position.X;
-            double b2 = line2.position.Y - m2 * line2.position.X;
-
             /* Calculo el punto x de intersección de ambas. */
             double xIntersection;
-            if (m1 != m2)
+            if (line1.m != line2.m)
             {
-                xIntersection = (b2 - b1) / (m1 - m2);
+                xIntersection = (line2.b - line1.b) / (line1.m - line2.m);
             }
             else
             {
@@ -58,7 +65,7 @@
             }
 
             /* Calculo la coordenada y de la intersección. */
-            double yIntersection = m1 * xIntersection + b1;
+            double yIntersection = line1.m * xIntersection + line1.b;
             return new Vector(xIntersection, yIntersection);
         }
     }

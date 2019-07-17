@@ -261,24 +261,10 @@ namespace pinball_v3
             }
 
             graphics.DrawPolygon(pen, points);
-
-            // TODO: quitar. Dibujar los ejes de colision.
-            for (int j = 0; j < this.yaxes.Count; j++)
-            {
-                Vector draw = this.yaxes[j].NewWithLength(50);
-                draw.Draw(pen, graphics, canvasHeight, this.centroid);
-            }
         }
 
 
-
-
-
-
-
-
-
-
+        /* DEPRECATED */
 
         /* Devuelve el número de vertices del polígono. */
         public int GetNumber()
