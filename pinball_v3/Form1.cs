@@ -100,7 +100,8 @@ namespace pinball_v3
         /* Función de callback para cada click del timer. */
         private void OnTimedEvent(object sender, EventArgs e)
         {
-            /* Movemos los elementos. */
+            /* Movemos la pelota y los flippers sin hacer comprobaciones 
+             * (las colisiones se detectan a posteriori). */
             this.ball.Move();
             for (int i = 0; i < this.flippers.Count; i++)
             {
@@ -111,6 +112,7 @@ namespace pinball_v3
             if (this.ball.CheckCanvas(canvasWidth, canvasHeight))
             {
                 /* Ha habido colisión con las paredes del canvas. */
+                Console.WriteLine(DateTime.UtcNow + ": Colisión con los bordes del canvas");
                 Invalidate();
                 return;
             }
@@ -120,7 +122,7 @@ namespace pinball_v3
             {
                 if (this.flippers[i].HandleCollisionSAT(this.ball))
                 {
-                    Console.WriteLine("Colisión con flipper");
+                    Console.WriteLine(DateTime.UtcNow + ": Colisión con flipper por SAT");
                     Invalidate();
                     return;
                 }
@@ -131,24 +133,25 @@ namespace pinball_v3
             {
                 if (this.bumpers[i].HandleCollision(this.ball, friction))
                 {
-                    Console.WriteLine("Colisión con bumper");
+                    Console.WriteLine(DateTime.UtcNow + ": Colisión con bumper");
                     Invalidate();
                     return;
                 }
             }
 
-
-            /* Si no ha habido ninguna colisión, comprobemos que no nos hemos
-             * pasado una colisión con flippers (ahora aplicaremos ray tracing). */
-            //for (int i = 0; i < this.flippers.Count; i++)
-            //{
-            //    if (this.flippers[i].HandleCollisionRayTracing(this.ball))
-            //    {
-            //        Console.WriteLine("Colisión con flippers detectada mediante ray tracing");
-            //        Invalidate();
-            //        return;
-            //    }
-            //}
+            /* Si en este frame no ha habido colisión, comprobamos colisión con flippers 
+             * mediante ray casting como último recurso, porque es posible que con la
+             * velocidad de la pelota se nos haya pasado. */
+            for (int i = 0; i < this.flippers.Count; i++)
+            {
+                if (this.flippers[i].HandleCollisionRayCasting(this.ball))
+                {
+                    /* Hay colisión por ray casting. */
+                    Console.WriteLine(DateTime.UtcNow + ": Colisión con flipper por ray casting");
+                    Invalidate();
+                    return;
+                }
+            }
         }
 
         /* Función que gestiona el evento de dibujar en pantalla. */

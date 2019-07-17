@@ -279,8 +279,12 @@ namespace pinball_v3
             // TODO: quitar. Dibujar los ejes de colision.
             for (int j = 0; j < this.yaxes.Count; j++)
             {
-                Vector draw = this.yaxes[j].NewWithLength(50);
-                draw.Draw(pen, graphics, canvasHeight, this.centroid);
+                if (j == 0)
+                {
+                    Vector draw = this.yaxes[j].NewWithLength(50);
+                    draw.Draw(pen, graphics, canvasHeight, this.centroid);
+                }
+                
             }
         }
 

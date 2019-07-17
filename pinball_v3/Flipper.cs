@@ -62,7 +62,7 @@ namespace pinball_v3
             {
                 perp = direction.NewNegativeRotation(Math.PI / 2);
                 perp.SetLength(this.height);
-                Vector begin = Vector.Subtract(this.position, perp.NewWithLength(this.height / 2));
+                Vector begin = Vector.Sum(this.position, perp.NewWithLength(this.height / 2));
                 vertices.Add(begin);
                 vertices.Add(Vector.Subtract(vertices[0], perp));
                 vertices.Add(Vector.Sum(vertices[1], direction));
@@ -84,8 +84,20 @@ namespace pinball_v3
             return this.polygon.HandleCollisionSAT(ball);
         }
 
-        public bool HandleCollisionRayTracing(Ball ball)
+        /* Recibe una pelota y tiene que comprobar si hay colisión
+         * con este flipper por el método de ray casting. */
+        public bool HandleCollisionRayCasting(Ball ball)
         {
+            /* Apunto a un vector en la superficie del flipper. */
+            //Vector edge;
+            //if (this.situation == "left")
+            //{
+            //    edge = this.polygon.Edges[1];
+            //}
+            //else
+            //{
+            //    edge = this.polygon.Edges[];
+            //}
             return false;
         }
 
@@ -158,7 +170,7 @@ namespace pinball_v3
             {
                 perp = direction.NewNegativeRotation(Math.PI / 2);
                 perp.SetLength(this.height);
-                Vector begin = Vector.Subtract(this.position, perp.NewWithLength(this.height / 2));
+                Vector begin = Vector.Sum(this.position, perp.NewWithLength(this.height / 2));
                 vertices.Add(begin);
                 vertices.Add(Vector.Subtract(vertices[0], perp));
                 vertices.Add(Vector.Sum(vertices[1], direction));
