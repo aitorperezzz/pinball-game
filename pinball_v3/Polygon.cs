@@ -15,7 +15,7 @@ namespace pinball_v3
          * valor de solapamiento distinto de cero. */
         public bool MeansCollision()
         {
-            return this.axis != null && this.overlap != 0;
+            return this.axis != null;
         }
     }
 
@@ -41,7 +41,7 @@ namespace pinball_v3
                 {
                     min = value;
                 }
-                else if (value > max)
+                if (value > max)
                 {
                     max = value;
                 }
@@ -60,7 +60,7 @@ namespace pinball_v3
                 return Math.Abs(Math.Min(projection1.max - projection2.min, projection2.max - projection1.min));
             }
 
-            /* No ha habido colisión, devolver 0. */
+            /* No hay solapamiento, devolver 0. */
             return 0;
         }
     }
@@ -185,68 +185,66 @@ namespace pinball_v3
             this.centroid = new Vector(averageX / this.number, averageY / this.number);
         }
 
-        public bool HandleCollision(Ball oldBall, Ball newBall)
+        /* Gestiona la colisión de este polígono con una pelota. */
+        public bool HandleCollisionSAT(Ball ball)
         {
-            MinimumTranslationVector mtv;
-
-            // TODO: llamar a actualizar al principio del loop, no aqui cada vez.
-            newBall.UpdateCollisionPolygon();
-
-            /* Vector de movimiento. */
-            Vector displacement = Vector.Subtract(newBall.Position, oldBall.Position);
+            /* Actualizamos el polígono de colisión de la pelota. */
+            ball.UpdateCollisionPolygon();
 
             /* Aplico el teorema de separación de ejes y guardo el resultado en mtv. */
-            mtv = this.SATCollidesWith(newBall, displacement);
+            MinimumTranslationVector mtv = SATCollision(this, ball.Polygon);
             if (mtv.MeansCollision())
             {
                 /* El resultado de SAT es una colisión, así que tenemos que rebotar la 
                  * pelota de este polígono. */
-                newBall.Bounce(mtv, this);
+                Console.WriteLine(DateTime.UtcNow + " voy a aplicar bounce");
+                ball.Bounce(mtv, this);
                 return true;
             }
 
             return false;
         }
 
-        private MinimumTranslationVector SATCollidesWith(Ball ball, Vector displacement)
+        /* Función estática que recibe dos polígonos y aplica el teorema SAT. Devuelve un 
+         * vector de traslación mínimo con la información de la colisión. Si ese vector es null,
+         * no ha habido colisión; si tiene valor, la ha habido. */
+        private static MinimumTranslationVector SATCollision(Polygon polygon1, Polygon polygon2)
         {
-            /* Declaro el resultado del algoritmo. */
+            /* Declaro el resultado del algoritmo, un vector de traslación mínimo. */
             MinimumTranslationVector result = new MinimumTranslationVector();
 
             List<Vector> axes = new List<Vector>();
             Vector axisWithMinOverlap = null;
             double minOverlap = double.MaxValue;
 
-            /* Obtengo los ejes de la pelota y añado a la lista de ejes. */
-            List<Vector> ballAxes = ball.GetSATAxes();
-            for (int i = 0; i < ballAxes.Count; i++)
+            /* Añado los ejes del primer polígono. */
+            for (int i = 0; i < polygon1.Yaxes.Count; i++)
             {
-                axes.Add(ballAxes[i]);
+                axes.Add(polygon1.Yaxes[i]);
             }
 
-            /* Añado los ejes del polígono a la lista de ejes. */
-            for (int j = 0; j < this.yaxes.Count; j++)
+            /* Añado los ejes del segundo polígono. */
+            for (int j = 0; j < polygon2.Yaxes.Count; j++)
             {
-                axes.Add(this.yaxes[j]);
+                axes.Add(polygon2.Yaxes[j]);
             }
 
             /* Recorro cada eje. */
-            int total = ballAxes.Count + this.yaxes.Count;
-            Projection polygonProjection;
-            Projection ballProjection;
+            Projection polygon1Projection;
+            Projection polygon2Projection;
             double overlap;
-            for (int k = 0; k < total; k++)
+            for (int k = 0; k < axes.Count; k++)
             {
                 /* Obtengo las proyecciones de cada figura. */
-                polygonProjection = new Projection(axes[k], this);
-                ballProjection = new Projection(axes[k], ball.Polygon);
+                polygon1Projection = new Projection(axes[k], polygon1);
+                polygon2Projection = new Projection(axes[k], polygon2);
 
                 /* Compruebo si se solapan. */
-                overlap = Projection.Overlap(ballProjection, polygonProjection);
+                overlap = Projection.Overlap(polygon1Projection, polygon2Projection);
                 if (overlap == 0)
                 {
-                    /* Si no hay solapamiento entre estas dos proyecciones, 
-                     * entonces no hay colisión. */
+                    /* No hay solapamiento entre estas dos proyecciones, por
+                     * tanto no hay solapamiento. */
                     result.axis = null;
                     result.overlap = 0;
                     return result;
@@ -259,8 +257,9 @@ namespace pinball_v3
                 }
             }
 
-            /* No ha habido separación en ningún eje, así que devolvemos el mtv. */
-            result.axis = axisWithMinOverlap;
+            /* No ha habido separación en ningún eje, así que hay colisión
+             * y devolvemos el mtv relleno con los mejores valores. */
+            result.axis = axisWithMinOverlap.Copy();
             result.overlap = minOverlap;
             return result;
         }
@@ -276,6 +275,13 @@ namespace pinball_v3
             }
 
             graphics.DrawPolygon(pen, points);
+
+            // TODO: quitar. Dibujar los ejes de colision.
+            for (int j = 0; j < this.yaxes.Count; j++)
+            {
+                Vector draw = this.yaxes[j].NewWithLength(50);
+                draw.Draw(pen, graphics, canvasHeight, this.centroid);
+            }
         }
 
 

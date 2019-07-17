@@ -3,9 +3,9 @@ using System.Drawing;
 
 namespace pinball_v3
 {
-    /* Esta clase consta de una coordenada x y otra y. */
     public class Vector
     {
+        /* Esta clase consta de una coordenada x y otra y. */
         public double x, y;
 
         /* Función constructora. */
@@ -27,13 +27,6 @@ namespace pinball_v3
         {
             get { return this.y; }
             set { this.y = value; }
-        }
-
-        /* Actualiza el valor de este vector al que se le pasa. */
-        public void Set(double x, double y)
-        {
-            this.x = x;
-            this.y = y;
         }
 
         /* Función estática que devuelve el vector suma de dos vectores. */
@@ -58,19 +51,6 @@ namespace pinball_v3
         public static double Distance(Vector begin, Vector end)
         {
             return Vector.Subtract(end, begin).CalculateLength();
-        }
-
-        public static void FillProjections(Vector vector, Vector xaxis, Vector yaxis, ref double px, ref double py)
-        {
-            /* Base generada por los ejes de coordenadas proporcionados. */
-            Matrix2D basisMatrix = new Matrix2D(xaxis, yaxis);
-
-            /* Proyecto. */
-            Vector projection = basisMatrix.Inverse().TimesVector(vector);
-
-            /* Relleno. */
-            px = projection.X;
-            py = projection.Y;
         }
 
         /* Devuelve la longitud de este vector. */
@@ -113,22 +93,6 @@ namespace pinball_v3
             this.y = newVector.y;
         }
 
-        /* Rota este punto alrededor del centro que se indica, el ángulo
-         * que se indica. */
-        public void RotateAround(Vector center, double angle)
-        {
-            /* Calculamos el vector relativo. */
-            Vector relVector = Vector.Subtract(this, center);
-
-            /* Rotamos el vector relativo. */
-            relVector.PositiveRotation(angle);
-
-            /* Nueva posición de este vector. */
-            Vector newPosition = Vector.Sum(center, relVector);
-            this.X = newPosition.X;
-            this.Y = newPosition.Y;
-        }
-
         /* Devolver un vector que está en la misma dirección que este
          * pero tiene la longitud que se especifica. */
         public Vector NewWithLength(double length)
@@ -150,14 +114,6 @@ namespace pinball_v3
         public void Normalize()
         {
             this.SetLength(1);
-        }
-
-        /* Devolver este vector, pero normalizado. */
-        public Vector NewNormalize()
-        {
-            Vector result = this.Copy();
-            result.SetLength(1);
-            return result;
         }
 
         /* Actualiza el valor de la posición de este vector
@@ -220,6 +176,9 @@ namespace pinball_v3
             Point begin = new Point((int)position.x, (int)(height - position.y));
             Point end = new Point((int)endVector.x, (int)(height - endVector.y));
             graphics.DrawLine(pen, begin, end);
+
+            /* Dibujar un punto en el extremo. */
+            graphics.DrawEllipse(pen, (int) endVector.X, (int) (height - endVector.Y), 5, 5);
         }
     }
 }

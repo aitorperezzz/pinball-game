@@ -40,36 +40,53 @@ namespace pinball_v3
             FallTimer = new AnimationTimer(175, "easein");
 
             /* Establezco ángulos mínimo y máximo. */
-            this.minAngle = -Math.PI / 4;
-            this.maxAngle = Math.PI / 4;
-            
-            /* Creo todos los vértices del flipper como si fuera
-             * el de la izquierda. */
+            this.minAngle = -Math.PI / 5;
+            this.maxAngle = Math.PI / 5;
+
+            /* Creo los vértices distinguiendo derecha e izquierda. */
             List<Vector> vertices = new List<Vector>();
             Vector direction = new Vector(Math.Cos(this.angle), Math.Sin(this.angle));
             direction.SetLength(this.length);
-            Vector perp = direction.NewPositiveRotation(Math.PI / 2);
-            perp.SetLength(this.height);
-            Vector begin = Vector.Subtract(this.position, perp.NewWithLength(this.height / 2));
-            vertices.Add(begin);
-            vertices.Add(Vector.Sum(vertices[0], perp));
-            vertices.Add(Vector.Sum(vertices[1], direction));
-            vertices.Add(Vector.Subtract(vertices[2], perp));
+            Vector perp;
+            if (this.situation == "left")
+            {
+                perp = direction.NewPositiveRotation(Math.PI / 2);
+                perp.SetLength(this.height);
+                Vector begin = Vector.Subtract(this.position, perp.NewWithLength(this.height / 2));
+                vertices.Add(begin);
+                vertices.Add(Vector.Sum(vertices[0], perp));
+                vertices.Add(Vector.Sum(vertices[1], direction));
+                vertices.Add(Vector.Subtract(vertices[2], perp));
+            }
+            else
+            {
+                perp = direction.NewNegativeRotation(Math.PI / 2);
+                perp.SetLength(this.height);
+                Vector begin = Vector.Subtract(this.position, perp.NewWithLength(this.height / 2));
+                vertices.Add(begin);
+                vertices.Add(Vector.Subtract(vertices[0], perp));
+                vertices.Add(Vector.Sum(vertices[1], direction));
+                vertices.Add(Vector.Sum(vertices[2], perp));
+            }
             this.polygon = new Polygon(vertices);
         }
 
-        /* Gestiona la colisión de este flipper con una pelota.
-         * (Recibe dos posiciones de la pelota, la actual y la anterior). */
-        public bool HandleCollision(Ball oldBall, Ball newBall)
+        /* Gestiona la colisión de este flipper con una pelota. */
+        public bool HandleCollisionSAT(Ball ball)
         {
             /* Si la bola está muy arriba, no comprobamos. */
-            if (this.OutOfBounds(newBall))
+            if (this.OutOfBounds(ball))
             {
                 return false;
             }
 
             /* Pasamos la gestión de la colisión al polígono. */
-            return this.polygon.HandleCollision(oldBall, newBall);
+            return this.polygon.HandleCollisionSAT(ball);
+        }
+
+        public bool HandleCollisionRayTracing(Ball ball)
+        {
+            return false;
         }
 
         /* Función que decide si la bola está fuera de rango del flipper. */
@@ -126,15 +143,27 @@ namespace pinball_v3
             List<Vector> vertices = new List<Vector>();
             Vector direction = new Vector(Math.Cos(this.angle), Math.Sin(this.angle));
             direction.SetLength(this.length);
-            Vector perp = direction.NewPositiveRotation(Math.PI / 2);
-            perp.SetLength(this.height);
-            Vector begin = Vector.Subtract(this.position, perp.NewWithLength(this.height / 2));
-            vertices.Add(begin);
-            vertices.Add(Vector.Sum(vertices[0], perp));
-            vertices.Add(Vector.Sum(vertices[1], direction));
-            vertices.Add(Vector.Subtract(vertices[2], perp));
-
-            /* Actualizo el polígono con estos nuevos vértices. */
+            Vector perp;
+            if (this.situation == "left")
+            {
+                perp = direction.NewPositiveRotation(Math.PI / 2);
+                perp.SetLength(this.height);
+                Vector begin = Vector.Subtract(this.position, perp.NewWithLength(this.height / 2));
+                vertices.Add(begin);
+                vertices.Add(Vector.Sum(vertices[0], perp));
+                vertices.Add(Vector.Sum(vertices[1], direction));
+                vertices.Add(Vector.Subtract(vertices[2], perp));
+            }
+            else
+            {
+                perp = direction.NewNegativeRotation(Math.PI / 2);
+                perp.SetLength(this.height);
+                Vector begin = Vector.Subtract(this.position, perp.NewWithLength(this.height / 2));
+                vertices.Add(begin);
+                vertices.Add(Vector.Subtract(vertices[0], perp));
+                vertices.Add(Vector.Sum(vertices[1], direction));
+                vertices.Add(Vector.Sum(vertices[2], perp));
+            }
             this.polygon = new Polygon(vertices);
         }
 

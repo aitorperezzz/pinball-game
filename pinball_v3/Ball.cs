@@ -15,23 +15,33 @@ namespace pinball_v3
         private Polygon polygon;
         private readonly double rad;
 
-        private readonly double minVelocity = 10;
-        private readonly double maxVelocity = 400;
+        /* Posición y momento en que estaba la pelota
+         * en el último frame. */
+        private Vector lastPosition;
+        private DateTime lastFrame;
+
+        /* Fijo velocidades límite. */
+        private readonly double minVelocity = 10; /* px / segundo */
+        private readonly double maxVelocity = 400; /* px / segundo */
 
         /* Función constructora de la pelota. */
         public Ball(Vector position, Vector velocity, double rad)
         {
             /* Guardo variables. */
             this.position = position.Copy();
+            this.lastPosition = position.Copy();
             this.velocity = velocity.Copy();
             this.rad = rad;
 
+            /* Inicializo el último frame. */
+            this.lastFrame = DateTime.UtcNow;
+
             /* Fabrico el polígono de colisión. */
             List<Vector> vertices = new List<Vector>(4);
-            vertices.Add(new Vector(position.X - rad / 2, position.Y + rad / 2));
-            vertices.Add(new Vector(position.X + rad / 2, position.Y + rad / 2));
-            vertices.Add(new Vector(position.X + rad / 2, position.Y - rad / 2));
-            vertices.Add(new Vector(position.X - rad / 2, position.Y - rad / 2));
+            vertices.Add(new Vector(position.X - rad, position.Y + rad));
+            vertices.Add(new Vector(position.X + rad, position.Y + rad));
+            vertices.Add(new Vector(position.X + rad, position.Y - rad));
+            vertices.Add(new Vector(position.X - rad, position.Y - rad));
             this.polygon = new Polygon(vertices);
         }
 
@@ -40,6 +50,13 @@ namespace pinball_v3
         {
             get { return this.position; }
             set { this.position = value.Copy(); }
+        }
+
+        /* Propiedad de la última posición de la pelota. */
+        public Vector LastPosition
+        {
+            get { return this.lastPosition; }
+            set { this.lastPosition = value.Copy(); }
         }
 
         /* Propiedad de la velocidad de la pelota. */
@@ -61,27 +78,34 @@ namespace pinball_v3
             get { return this.polygon; }
         }
 
-        /* Devuelve una copia de esta pelota. */
-        public Ball Copy()
+        /* Actualiza la posición de la pelota con cada tick del timer. */
+        public void Move()
         {
-            return new Ball(this.position, this.velocity, this.rad);
+            /* Guardamos la última posición. */
+            this.lastPosition = this.position.Copy();
+
+            /* Calculamos el número de segundos que han pasado
+             * desde el último frame. */
+            double elapsed = DateTime.UtcNow.Subtract(this.lastFrame).TotalSeconds;
+
+            /* Calculamos el número de pixeles que se tiene que mover la 
+             * pelota en este frame. */
+            Vector pixelsPerFrame = this.Velocity.NewTimes(elapsed);
+            this.position.Sum(pixelsPerFrame);
+
+            /* Actualizamos el instante del último frame, que es ahora. */
+            this.lastFrame = DateTime.UtcNow;
         }
 
         /* Actualiza el polígono de colisión de la pelota. */
         public void UpdateCollisionPolygon()
         {
             List<Vector> vertices = new List<Vector>(4);
-            vertices.Add(new Vector(position.X - rad / 2, position.Y + rad / 2));
-            vertices.Add(new Vector(position.X + rad / 2, position.Y + rad / 2));
-            vertices.Add(new Vector(position.X + rad / 2, position.Y - rad / 2));
-            vertices.Add(new Vector(position.X - rad / 2, position.Y - rad / 2));
-            this.polygon.Vertices = vertices;
-        }
-
-        /* Devuelve una referencia a los ejes que se usan en el algoritmo SAT. */
-        public List<Vector> GetSATAxes()
-        {
-            return this.polygon.Yaxes;
+            vertices.Add(new Vector(position.X - this.rad, position.Y + this.rad));
+            vertices.Add(new Vector(position.X + this.rad, position.Y + this.rad));
+            vertices.Add(new Vector(position.X + this.rad, position.Y - this.rad));
+            vertices.Add(new Vector(position.X - this.rad, position.Y - this.rad));
+            this.polygon = new Polygon(vertices);
         }
 
         /* Recibe un vector de traslación mínimo procedente del SAT y un polígono,
@@ -139,10 +163,12 @@ namespace pinball_v3
             Vector displacement = mtv.axis.NewWithLength(mtv.overlap);
 
             /* Le sumo este vector a la posición de la pelota. */
-            this.Position = Vector.Sum(this.position, displacement);
+            this.lastPosition = this.position.Copy();
+            this.position.Sum(displacement);
         }
 
         /* Comprueba que la velocidad de la pelota no es ni muy baja ni muy alta. */
+        // TODO: comprobar que no es muy baja?
         private void CheckVelocityLimit()
         {
             /* Coordenada x. */
@@ -166,26 +192,44 @@ namespace pinball_v3
             }
         }
 
-
-
-
-
-
-        /* Función estática que recibe la pelota anterior y la simulación
-         * y decide si tiene que aplicar colisión con las paredes del canvas, y 
-         * en ese caso las aplica. */
-        static public bool CheckCanvas(int width, int height, Ball oldBall, Ball newBall, double friction)
+        /* Decide si la pelota choca contra las paredes del canvas. Si es así,
+         * cambia la velocidad de la pelota y la separa de la pared. */
+        public bool CheckCanvas(int width, int height)
         {
-            if (newBall.Position.X - newBall.Rad <= 0 || newBall.Position.X + newBall.rad >= width)
+            /* Compruebo paredes derecha e izquierda. */
+            if (this.Position.X - this.Rad <= 0 || this.Position.X + this.Rad >= width)
             {
-                /* Colisión con paredes derecha o izquierda. */
-                oldBall.Velocity = new Vector(oldBall.Velocity.X * -1, oldBall.Velocity.Y);
+                /* Modifico la velocidad. */
+                this.Velocity.X *= -1;
+
+                /* Separo a la pelota de la pared. */
+                if (this.Position.X - this.Rad < 0)
+                {
+                    this.Position.X -= this.Position.X - this.Rad;
+                }
+                if (this.Position.X + this.Rad > width)
+                {
+                    this.Position.X -= this.Position.X + this.Rad - width;
+                }
+
                 return true;
             }
-            else if (newBall.Position.Y - newBall.rad <= 0 || newBall.Position.Y + newBall.rad >= height)
+            /* Compruebo suelo y techo. */
+            else if (this.Position.Y - this.Rad <= 0 || this.Position.Y + this.Rad >= height)
             {
-                /* Colisión con paredes superior o inferior. */
-                oldBall.Velocity = new Vector(oldBall.Velocity.X, oldBall.Velocity.Y * -1);
+                /* Modifico la velocidad. */
+                this.Velocity.Y *= -1;
+
+                /* Separo la pelota de las paredes. */
+                if (this.Position.Y - this.Rad < 0)
+                {
+                    this.Position.Y -= this.Position.Y - this.Rad;
+                }
+                if (this.Position.Y + this.Rad > height)
+                {
+                    this.Position.Y -= this.Position.Y + this.Rad - height;
+                }
+
                 return true;
             }
             else
@@ -194,47 +238,17 @@ namespace pinball_v3
             }
         }
 
-        /* La pelota actualiza su posición en función
-         * de la velocidad que tiene y la gravedad. */
-        public void Move(double gravity, double interval)
-        {
-            /* Actualizo la posición y la velocidad por los que dan la simulación. */
-            this.position = this.SimulateNextPosition(gravity, interval);
-            this.velocity = this.SimulateNextVelocity(gravity, interval);
-        }
-
-        /* Devuelve el siguiente estado, simulado, de la pelota. */
-        public Ball SimulateNextState(double gravity, double interval)
-        {
-            Vector newPos = this.SimulateNextPosition(gravity, interval);
-            Vector newVel = this.SimulateNextVelocity(gravity, interval);
-            return new Ball(newPos, newVel, this.rad);
-        }
-
-        /* Simula el movimiento de la pelota, dando el siguiente valor
-         * de la posición. */
-        private Vector SimulateNextPosition(double gravity, double interval)
-        {
-            double newx = this.position.X + this.velocity.X * interval;
-            double newy = this.position.Y + this.velocity.Y * interval - (1 / 2) * gravity * Math.Pow(interval, 2);
-            return new Vector(newx, newy);
-        }
-
-        /* Simula el siguiente valor de la velocidad y lo devuelve. */
-        private Vector SimulateNextVelocity(double gravity, double interval)
-        {
-            double vely = this.velocity.Y - gravity * interval;
-            return new Vector(this.velocity.X, vely);
-        }
-        
-
         /* Dibuja la pelota al canvas. */
         public void Draw(Graphics graphics, double height)
         {
-            SolidBrush ballBrush = new SolidBrush(Color.Red);
+            /* Transformo posición a posición en el canvas. */
             float xpos = (float)(this.position.X - this.rad);
             float ypos = (float)(height - this.position.Y - this.rad);
-            graphics.FillEllipse(ballBrush, xpos, ypos, 2 * (float)this.rad, 2 * (float)this.rad);
+            graphics.FillEllipse(new SolidBrush(Color.Red), xpos, ypos, 2 * (float)this.rad, 2 * (float)this.rad);
+
+            // TODO: QUITAR.
+            // Dibujo el polígono de colisión.
+            this.polygon.Draw(new Pen(Color.Black, 3), graphics, height);
         }
     }
 }

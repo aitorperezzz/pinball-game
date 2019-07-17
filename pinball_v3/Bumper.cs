@@ -19,12 +19,14 @@ namespace pinball_v3
         }
 
         /* Recibe la pelota antigua y la nueva y realiza la colisión. */
-        public bool HandleCollision(Ball oldBall, Ball newBall, double friction)
+        public bool HandleCollision(Ball ball, double friction)
         {
-            /* Comprobamos si la nueva pelota colisionará con el bumper. */
-            if (Vector.Distance(this.position, newBall.Position) < newBall.Rad + this.rad)
+            /* Comprobamos si la pelota va a chocar con el bumper. */
+            if (Vector.Distance(this.position, ball.Position) < ball.Rad + this.rad)
             {
-                this.ApplyCollision(oldBall, friction);
+                /* Colocamos a la pelota en la anterior posición. */
+                ball.Position = ball.LastPosition;
+                this.ApplyCollision(ball, friction);
                 return true;
             }
 
@@ -43,8 +45,8 @@ namespace pinball_v3
             Vector newVel = baseMatrix.Inverse().TimesVector(ball.Velocity);
 
             /* Cambiamos de signo la coordenada y de la nueva velocidad. */
-            newVel.X *= friction;
-            newVel.Y *= -friction;
+            //newVel.X *= friction;
+            newVel.Y *= -1;
             
             /* Reescribimos el vector velocidad en la base canónica
              * y se lo asignamos a la bola. */

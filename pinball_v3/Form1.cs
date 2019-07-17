@@ -93,31 +93,34 @@ namespace pinball_v3
 
             /* Creamos la pelota. */
             Vector ballPosition = new Vector(this.canvasWidth / 2, this.canvasHeight - 100);
-            Vector ballVelocity = new Vector(rand.Next(1, 50), rand.Next(1, 50));
+            Vector ballVelocity = new Vector(rand.Next(1, 250), rand.Next(1, 250));
             this.ball = new Ball(ballPosition, ballVelocity, this.radius);
         }
 
         /* Función de callback para cada click del timer. */
         private void OnTimedEvent(object sender, EventArgs e)
         {
-            /* Simular el siguiente estado de la pelota. */
-            Ball newBall = this.ball.SimulateNextState(this.gravity, this.interval);
+            /* Movemos los elementos. */
+            this.ball.Move();
+            for (int i = 0; i < this.flippers.Count; i++)
+            {
+                this.flippers[i].UpdateFlipperAngle();
+            }
 
             /* Comprobar la colisión de la bola con los bordes del canvas. */
-            if (Ball.CheckCanvas(canvasWidth, canvasHeight, this.ball, newBall, friction))
+            if (this.ball.CheckCanvas(canvasWidth, canvasHeight))
             {
                 /* Ha habido colisión con las paredes del canvas. */
                 Invalidate();
                 return;
             }
 
-            /* Gestionamos la colisión de la pelota con cada flipper. */
+            /* Comprobamos una primera colisión "naive" con los flippers. */
             for (int i = 0; i < this.flippers.Count; i++)
             {
-                if (this.flippers[i].HandleCollision(this.ball, newBall))
+                if (this.flippers[i].HandleCollisionSAT(this.ball))
                 {
                     Console.WriteLine("Colisión con flipper");
-                    this.ball = newBall.Copy();
                     Invalidate();
                     return;
                 }
@@ -126,7 +129,7 @@ namespace pinball_v3
             /* Comprobar colisión con cada uno de los bumpers. */
             for (int i = 0; i < this.bumpers.Count; i++)
             {
-                if (this.bumpers[i].HandleCollision(this.ball, newBall, friction))
+                if (this.bumpers[i].HandleCollision(this.ball, friction))
                 {
                     Console.WriteLine("Colisión con bumper");
                     Invalidate();
@@ -134,9 +137,18 @@ namespace pinball_v3
                 }
             }
 
-            /* Si ha llegado aquí, no ha habido obstáculos, simplemente mover la pelota. */
-            this.ball = newBall.Copy();
-            Invalidate();
+
+            /* Si no ha habido ninguna colisión, comprobemos que no nos hemos
+             * pasado una colisión con flippers (ahora aplicaremos ray tracing). */
+            //for (int i = 0; i < this.flippers.Count; i++)
+            //{
+            //    if (this.flippers[i].HandleCollisionRayTracing(this.ball))
+            //    {
+            //        Console.WriteLine("Colisión con flippers detectada mediante ray tracing");
+            //        Invalidate();
+            //        return;
+            //    }
+            //}
         }
 
         /* Función que gestiona el evento de dibujar en pantalla. */
@@ -145,7 +157,7 @@ namespace pinball_v3
             /* Dibujar los flippers. */
             for (int i = 0; i < this.flippers.Count; i++)
             {
-                this.flippers[i].UpdateFlipperAngle();
+                
                 this.flippers[i].Draw(e.Graphics, this.canvasHeight);
             }
 
