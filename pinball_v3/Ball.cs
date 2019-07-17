@@ -120,8 +120,17 @@ namespace pinball_v3
              * requerida por mtv. */
             this.Separate(mtv);
 
-            /* Creo unas coordenadas con mtv. */
-            Vector yaxis = mtv.axis;
+            /* Reflejo la velocidad sobre el eje mtv. */
+            this.Deflect(mtv.axis);
+
+            /* Compruebo que la velocidad no se ha salido de los límites. */
+            this.CheckVelocityLimit();
+        }
+
+        /* Refleja la velocidad de la pelota sobre el eje y que se le pasa. */
+        public void Deflect(Vector yaxis)
+        {
+            /* Fabrico la matriz de rotación. */
             Vector xaxis = yaxis.NewNegativeRotation(Math.PI / 2);
             Matrix2D basis = new Matrix2D(xaxis, yaxis);
 
@@ -133,9 +142,6 @@ namespace pinball_v3
 
             /* Reescribo en la base canónica. */
             this.velocity = basis.TimesVector(projVel);
-
-            /* Compruebo que la velocidad no se ha salido de los límites. */
-            this.CheckVelocityLimit();
         }
 
         /* Comprueba que el eje que marca mtv apunta desde el polígono hacia la pelota, 

@@ -68,13 +68,12 @@ namespace pinball_v3
 
     class Polygon
     {
-        /* Un polígono consta de una lista de vértices.
-         * El último se une al primero. */
+        /* Un polígono consta de una lista de vértices, tales que cada uno
+         * se une al siguiente. */
         private List<Vector> vertices;
-        private List<Vector> edges;
-        private List<Vector> xaxes;
         private List<Vector> yaxes;
 
+        /* Número de vértices y centroide del polígono. */
         private readonly int number;
         private Vector centroid;
 
@@ -83,21 +82,18 @@ namespace pinball_v3
         {
             this.number = vertices.Count;
 
-            /* Inicializamos todas las listas de este polígono. */
+            /* Inicializamos las listas de este polígono. */
             this.vertices = new List<Vector>(this.number);
-            this.edges = new List<Vector>(this.number);
-            this.xaxes = new List<Vector>(this.number);
             this.yaxes = new List<Vector>(this.number);
 
-            /* Añado los vértices y calculo sus lados . */
-            Vector edge;
+            /* Añado los vértices y calculo los ejes. */
+            Vector edge, xaxis;
             for (int i = 0; i < this.number; i++)
             {
                 this.vertices.Add(vertices[i]);
                 edge = Vector.Subtract(vertices[(i + 1) % this.number], vertices[i % this.number]);
-                this.edges.Add(edge);
-                this.xaxes.Add(edge.NewWithLength(1));
-                this.yaxes.Add(this.xaxes[i].NewPositiveRotation(Math.PI / 2));
+                xaxis = edge.NewWithLength(1);
+                this.yaxes.Add(xaxis.NewPositiveRotation(Math.PI / 2));
             }
 
             /* Calculo el centroide. */
@@ -139,13 +135,7 @@ namespace pinball_v3
             }
         }
 
-        /* Propiedad que accede a los ejes x. */
-        public List<Vector> Xaxes
-        {
-            get { return this.xaxes; }
-        }
-
-        /* Propiedad que accede a los ejes y. */
+        /* Propiedad para acceder a los ejes y. */
         public List<Vector> Yaxes
         {
             get { return this.yaxes; }
@@ -160,22 +150,17 @@ namespace pinball_v3
         /* Actualiza los elementos del polígono una vez que sus vértices han cambiado. */
         private void Update()
         {
-            /* Limpio todas las listas. */
-            this.edges.Clear();
-            this.xaxes.Clear();
+            /* Actualizo la lista de ejes. */
             this.yaxes.Clear();
-
-            /* Calculo lados y ejes. */
-            Vector edge;
+            Vector edge, xaxis;
             for (int i = 0; i < this.number; i++)
             {
                 edge = Vector.Subtract(vertices[(i + 1) % this.number], vertices[i % this.number]);
-                this.edges.Add(edge);
-                this.xaxes.Add(edge.NewWithLength(1));
-                this.yaxes.Add(this.xaxes[i].NewPositiveRotation(Math.PI / 2));
+                xaxis = edge.NewWithLength(1);
+                this.yaxes.Add(xaxis.NewPositiveRotation(Math.PI / 2));
             }
 
-            /* Calculo el centroide. */
+            /* Actualizo el centroide. */
             double averageX = 0, averageY = 0;
             for (int i = 0; i < this.number; i++)
             {
@@ -185,7 +170,8 @@ namespace pinball_v3
             this.centroid = new Vector(averageX / this.number, averageY / this.number);
         }
 
-        /* Gestiona la colisión de este polígono con una pelota. */
+        /* Gestiona la colisión de este polígono con una pelota, aplicando
+         * el teorema SAT. */
         public bool HandleCollisionSAT(Ball ball)
         {
             /* Actualizamos el polígono de colisión de la pelota. */
@@ -279,12 +265,8 @@ namespace pinball_v3
             // TODO: quitar. Dibujar los ejes de colision.
             for (int j = 0; j < this.yaxes.Count; j++)
             {
-                if (j == 0)
-                {
-                    Vector draw = this.yaxes[j].NewWithLength(50);
-                    draw.Draw(pen, graphics, canvasHeight, this.centroid);
-                }
-                
+                Vector draw = this.yaxes[j].NewWithLength(50);
+                draw.Draw(pen, graphics, canvasHeight, this.centroid);
             }
         }
 
